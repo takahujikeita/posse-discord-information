@@ -1,0 +1,272 @@
+# Implementation Plan
+
+- [x] 1. MCP サーバープロジェクトのセットアップ
+
+  - [x] 1.1 プロジェクト初期化と MCP SDK 導入
+    - package.json の作成と TypeScript、@modelcontextprotocol/sdk、discord.js の依存関係追加
+    - tsconfig.json の設定（ES2022、Node.js 向け）
+    - ディレクトリ構造の作成（src/types、src/services、src/handlers、src/utils）
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+  - [x] 1.2 型定義の作成
+    - src/types/index.ts を作成
+    - Message、UserInfo、ChannelInfo、ServerStats、ToolResult インターフェースを定義
+    - MCPErrorCode enum を定義
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 7.1, 7.2, 7.3, 7.4_
+  - [x] 1.3 環境変数設定
+    - .env.example ファイルの作成（DISCORD_BOT_TOKEN、DISCORD_GUILD_ID）
+    - .gitignore に.env を追加
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+
+- [x] 2. Discord API サービスの実装
+
+  - [x] 2.1 DiscordService クラスの基本実装
+    - src/services/discordService.ts を作成
+    - discord.js クライアントの初期化（必要な Intents を設定）
+    - connect()メソッドで Bot Token を使用してログイン
+    - 接続エラーハンドリングを実装
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [x] 2.2 メッセージ検索機能の実装
+    - searchMessages()メソッドを実装
+    - チャンネル指定、キーワード検索、結果制限（最大 50 件）の機能を実装
+    - Message 型への変換処理を実装
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+  - [x] 2.3 ユーザー情報取得機能の実装
+    - getUserInfo()メソッドを実装
+    - ユーザー名または ID での検索を実装
+    - ロール情報、参加日、ステータスの取得を実装
+    - UserInfo 型への変換処理を実装
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+  - [x] 2.4 チャンネル情報取得機能の実装
+    - getChannelInfo()メソッドを実装
+    - チャンネルタイプ、トピック、メンバー数の取得を実装
+    - ChannelInfo 型への変換処理を実装
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+  - [x] 2.5 サーバー統計取得機能の実装
+    - getServerStats()メソッドを実装
+    - メンバー数、オンライン数、チャンネル数、ロール数の取得を実装
+    - ServerStats 型への変換処理を実装
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+
+- [x] 3. MCP ツールハンドラーの実装
+
+  - [x] 3.1 search_messages ツールハンドラー
+    - src/handlers/searchMessages.ts を作成
+    - パラメータバリデーション（query 必須、limit 最大 50）を実装
+    - DiscordService の searchMessages()を呼び出し
+    - ToolResult 形式で JSON 文字列を返す
+    - エラーハンドリング（NOT_FOUND、DISCORD_API_ERROR）を実装
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+  - [x] 3.2 get_user_info ツールハンドラー
+    - src/handlers/getUserInfo.ts を作成
+    - パラメータバリデーション（username または user_id）を実装
+    - DiscordService の getUserInfo()を呼び出し
+    - ToolResult 形式で JSON 文字列を返す
+    - エラーハンドリング（NOT_FOUND、DISCORD_API_ERROR）を実装
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+  - [x] 3.3 get_channel_info ツールハンドラー
+    - src/handlers/getChannelInfo.ts を作成
+    - パラメータバリデーション（channel_id 必須）を実装
+    - DiscordService の getChannelInfo()を呼び出し
+    - ToolResult 形式で JSON 文字列を返す
+    - エラーハンドリング（NOT_FOUND、DISCORD_API_ERROR）を実装
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+  - [x] 3.4 get_server_stats ツールハンドラー
+    - src/handlers/getServerStats.ts を作成
+    - DiscordService の getServerStats()を呼び出し
+    - ToolResult 形式で JSON 文字列を返す
+    - エラーハンドリング（DISCORD_API_ERROR）を実装
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+
+- [x] 4. エラーハンドリングとユーティリティ
+
+  - [x] 4.1 エラーハンドリングユーティリティ
+    - src/utils/errors.ts を作成
+    - MCPError 型と createError()関数を実装
+    - 各エラーコード用のヘルパー関数を実装（createRateLimitError、createAuthError 等）
+    - ErrorLogger クラスを実装
+    - _Requirements: 7.1, 7.2, 7.3, 7.4_
+  - [x] 4.2 レート制限ハンドリング
+    - Discord API レート制限の検出と処理を実装
+    - retryAfter 情報の抽出と返却を実装
+    - _Requirements: 7.3_
+
+- [x] 5. MCP サーバーのコア実装
+
+  - [x] 5.1 MCPServer クラスの実装
+    - src/index.ts を作成
+    - @modelcontextprotocol/sdk の Server クラスを初期化
+    - サーバー情報（name、version）と capabilities（tools）を設定
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+  - [x] 5.2 ツールリストハンドラーの実装
+    - tools/list リクエストハンドラーを実装
+    - 4 つのツール定義（search_messages、get_user_info、get_channel_info、get_server_stats）を返す
+    - 各ツールの JSON Schema を定義
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+  - [x] 5.3 ツール実行ハンドラーの実装
+    - tools/call リクエストハンドラーを実装
+    - ツール名に応じて適切なハンドラーを呼び出し
+    - パラメータの検証とエラーハンドリングを実装
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 5.5_
+  - [x] 5.4 サーバー起動処理の実装
+    - StdioServerTransport を使用した stdio 通信の設定
+    - DiscordService の初期化と接続
+    - 環境変数の検証（DISCORD_BOT_TOKEN、DISCORD_GUILD_ID）
+    - エラーハンドリングとグレースフルシャットダウン
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 6.1, 6.2, 6.3, 6.4, 6.5_
+
+- [x] 6. ビルドとドキュメント
+
+  - [x] 6.1 ビルド設定
+    - package.json に build、dev、start スクリプトを追加
+    - TypeScript コンパイル設定の確認
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+  - [x] 6.2 README ドキュメントの作成
+    - README.md を作成
+    - プロジェクト概要と MCP サーバーの説明を記載
+    - Discord Bot 設定手順を記載（Developer Portal、権限、Intents）
+    - 環境変数の説明を記載
+    - ビルドと実行方法を記載
+    - Kiro と Claude Desktop 向けの設定例を記載
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+
+- [x] 7. チャンネル名解決機能の実装
+
+  - [x] 7.1 チャンネルキャッシュの実装
+    - DiscordService にチャンネル名 →ID のマッピングキャッシュを追加
+    - buildChannelCache()メソッドを実装してサーバー起動時にキャッシュを構築
+    - チャンネル一覧を取得して Map に保存
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5_
+  - [x] 7.2 チャンネル名解決メソッドの実装
+    - resolveChannelId()メソッドを実装
+    - チャンネル名（大文字小文字を区別しない）からチャンネル ID を検索
+    - 同じ名前の複数チャンネルに対応（配列で返す）
+    - チャンネルが見つからない場合のエラーハンドリング
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+
+- [x] 8. list_channels ツールの実装
+
+  - [x] 8.1 listChannels メソッドの実装
+    - DiscordService に listChannels()メソッドを追加
+    - サーバー内の全チャンネルを取得
+    - type パラメータによるフィルタリング機能を実装
+    - ChannelInfo 配列を返す
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+  - [x] 8.2 list_channels ハンドラーの実装
+    - src/handlers/listChannels.ts を作成
+    - パラメータバリデーション（type は enum 値のみ）を実装
+    - DiscordService の listChannels()を呼び出し
+    - ToolResult 形式で JSON 文字列を返す
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+  - [x] 8.3 MCP サーバーへのツール登録
+    - index.ts の tools/list ハンドラーに list_channels ツール定義を追加
+    - tools/call ハンドラーに list_channels のルーティングを追加
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+
+- [x] 9. get_recent_messages ツールの実装
+
+  - [x] 9.1 getRecentMessages メソッドの実装
+    - DiscordService に getRecentMessages()メソッドを追加
+    - チャンネル ID からメッセージを取得（最大 100 件）
+    - 新しい順にソート
+    - Message 配列を返す
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5_
+  - [x] 9.2 get_recent_messages ハンドラーの実装
+    - src/handlers/getRecentMessages.ts を作成
+    - channel_name または channel_id のバリデーション（どちらか必須）
+    - channel_name が指定された場合は resolveChannelId()で ID に変換
+    - limit パラメータのバリデーション（最大 100）
+    - DiscordService の getRecentMessages()を呼び出し
+    - ToolResult 形式で JSON 文字列を返す
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5_
+  - [x] 9.3 MCP サーバーへのツール登録
+    - index.ts の tools/list ハンドラーに get_recent_messages ツール定義を追加
+    - tools/call ハンドラーに get_recent_messages のルーティングを追加
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5_
+
+- [x] 10. search_messages の拡張機能実装
+
+  - [x] 10.1 日付範囲フィルタの実装
+    - searchMessages()メソッドに after/before パラメータを追加
+    - ISO 8601 文字列を Date オブジェクトに変換
+    - メッセージのタイムスタンプでフィルタリング
+    - 日付バリデーション（after < before）を実装
+    - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
+  - [x] 10.2 作成者フィルタの実装
+    - searchMessages()メソッドに author_id/author_name パラメータを追加
+    - author_name が指定された場合はユーザー ID に変換
+    - メッセージの作成者でフィルタリング
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
+  - [x] 10.3 チャンネル名対応の実装
+    - searchMessages()メソッドに channel_name パラメータを追加
+    - channel_name が指定された場合は resolveChannelId()で ID に変換
+    - 複数チャンネルが見つかった場合は全てを検索
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+  - [x] 10.4 スレッド検索の実装
+    - searchMessages()メソッドに include_threads パラメータを追加
+    - チャンネル内のアクティブなスレッドを取得
+    - include_threads が true の場合はスレッド内も検索
+    - Message 型に thread 情報を追加
+    - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
+  - [x] 10.5 search_messages ハンドラーの更新
+    - searchMessages.ts に新しいパラメータのバリデーションを追加
+    - 日付文字列の形式チェック
+    - パラメータを DiscordService に渡す
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 10.1, 10.2, 10.3, 10.4, 10.5, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5_
+  - [x] 10.6 MCP ツール定義の更新
+    - index.ts の search_messages ツール定義に新しいパラメータを追加
+    - 各パラメータの説明を記載
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 10.1, 10.2, 10.3, 10.4, 10.5, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5_
+
+- [x] 11. get_channel_activity ツールの実装
+
+  - [x] 11.1 型定義の追加
+    - types/index.ts に ChannelActivity インターフェースを追加
+    - totalMessages、activeUsers、messagesPerDay、topAuthors、peakHours を定義
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
+  - [x] 11.2 getChannelActivity メソッドの実装
+    - DiscordService に getChannelActivity()メソッドを追加
+    - 指定期間内のメッセージを全て取得
+    - メッセージ数、アクティブユーザー数を集計
+    - 1 日あたりの平均メッセージ数を計算
+    - トップ投稿者（上位 5 名）を集計
+    - ピーク時間帯（時間別メッセージ数）を集計
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
+  - [x] 11.3 get_channel_activity ハンドラーの実装
+    - src/handlers/getChannelActivity.ts を作成
+    - channel_name または channel_id のバリデーション
+    - channel_name が指定された場合は resolveChannelId()で ID に変換
+    - after/before パラメータのバリデーション
+    - DiscordService の getChannelActivity()を呼び出し
+    - ToolResult 形式で JSON 文字列を返す
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
+  - [x] 11.4 MCP サーバーへのツール登録
+    - index.ts の tools/list ハンドラーに get_channel_activity ツール定義を追加
+    - tools/call ハンドラーに get_channel_activity のルーティングを追加
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
+
+- [x] 12. list_members_by_role ツールの実装
+
+  - [x] 12.1 listMembersByRole メソッドの実装
+    - DiscordService に listMembersByRole()メソッドを追加
+    - ロール名（大文字小文字を区別しない）でロールを検索
+    - 該当ロールを持つ全メンバーを取得
+    - UserInfo 配列を返す
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+  - [x] 12.2 list_members_by_role ハンドラーの実装
+    - src/handlers/listMembersByRole.ts を作成
+    - role_name パラメータのバリデーション（必須）
+    - DiscordService の listMembersByRole()を呼び出し
+    - ロールが見つからない場合のエラーハンドリング
+    - ToolResult 形式で JSON 文字列を返す
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+  - [x] 12.3 MCP サーバーへのツール登録
+    - index.ts の tools/list ハンドラーに list_members_by_role ツール定義を追加
+    - tools/call ハンドラーに list_members_by_role のルーティングを追加
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+
+- [x] 13. ドキュメントの更新
+  - [x] 13.1 README の更新
+    - 新しいツールの説明を追加
+    - 使用例を更新（チャンネル名での検索例など）
+    - 拡張された search_messages のパラメータを記載
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 9.1, 9.2, 9.3, 9.4, 9.5, 10.1, 10.2, 10.3, 10.4, 10.5, 11.1, 11.2, 11.3, 11.4, 11.5, 12.1, 12.2, 12.3, 12.4, 12.5, 13.1, 13.2, 13.3, 13.4, 13.5, 14.1, 14.2, 14.3, 14.4, 14.5, 15.1, 15.2, 15.3, 15.4, 15.5_
